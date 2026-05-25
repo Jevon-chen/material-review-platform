@@ -8,3 +8,7 @@ builds:
         value: 10000
       - key: JWT_SECRET
         generateValue: true
+      - key: SYNC_INTERVAL
+        value: "120000"
+      - key: GIT_TOKEN
+        sync: false

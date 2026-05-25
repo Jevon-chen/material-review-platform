@@ -7,6 +7,7 @@ var jwt = require('jsonwebtoken');
 var multer = require('multer');
 var WebSocket = require('ws');
 var Database = require('better-sqlite3');
+var dbSync = require('./db-sync');
 
 var app = express();
 var server = http.createServer(app);
@@ -180,6 +181,20 @@ function filterMaterialsParamsForUser(user) {
 }
 
 // ===== Auth Routes =====
+// Mark DB as dirty on all write operations
+app.use(function(req, res, next) {
+  if (['POST', 'PUT', 'DELETE'].indexOf(req.method) >= 0 && req.path.startsWith('/api/') && req.path !== '/api/auth/login') {
+    var originalEnd = res.end;
+    res.end = function() {
+      if (res.statusCode >= 200 && res.statusCode < 300) {
+        dbSync.markDirty();
+      }
+      originalEnd.apply(res, arguments);
+    };
+  }
+  next();
+});
+
 app.post('/api/auth/login', function (req, res) {
   var username = req.body.username;
   var password = req.body.password;
@@ -1064,6 +1079,9 @@ function checkMonthlyClear() {
 }
 
 // ===== Start Server =====
+// Initialize Git persistence before seeding
+dbSync.init();
+
 seedData();
 checkMonthlyClear();
 
@@ -1074,4 +1092,6 @@ if (process.argv.indexOf('--init-only') >= 0) {
 
 server.listen(PORT, function () {
   console.log('捷途素材预审台 server running on port ' + PORT);
+  // Start auto-sync after server is up
+  dbSync.startAutoSync();
 });
