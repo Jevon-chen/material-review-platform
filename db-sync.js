@@ -50,11 +50,23 @@ function init() {
     return false;
   }
 
-  // Check if we're in a git repo
+  // Check if we're in a git repo, if not, initialize one
   const repoCheck = runGit('git rev-parse --git-dir');
   if (!repoCheck) {
-    console.log('[db-sync] not in a git repo, persistence disabled');
-    return false;
+    console.log('[db-sync] initializing git repo...');
+    runGit('git init');
+    
+    // If GIT_REPO is provided (for Docker/Render environments), set up remote
+    if (GIT_TOKEN) {
+      const repoOwner = process.env.GIT_REPO_OWNER || 'Jevon-chen';
+      const repoName = process.env.GIT_REPO_NAME || 'material-review-platform';
+      const authUrl = 'https://' + repoOwner + ':' + GIT_TOKEN + '@github.com/' + repoOwner + '/' + repoName + '.git';
+      runGit('git remote add origin ' + authUrl);
+      console.log('[db-sync] git repo initialized with remote');
+    } else {
+      console.log('[db-sync] no GIT_TOKEN, persistence disabled');
+      return false;
+    }
   }
 
   // Configure git
