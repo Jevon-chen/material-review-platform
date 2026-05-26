@@ -1,0 +1,21 @@
+{
+  "services": [
+    {
+      "type": "web",
+      "name": "material-review-platform",
+      "build": {
+        "type": "dockerfile"
+      },
+      "env": {
+        "NODE_ENV": "production",
+        "PORT": "3000",
+        "DATA_DIR": "/data",
+        "UPLOAD_DIR": "/data/uploads"
+      },
+      "disk": {
+        "mount_path": "/data",
+        "size_gb": 1
+      }
+    }
+  ]
+}
