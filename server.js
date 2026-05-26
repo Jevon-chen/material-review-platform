@@ -15,8 +15,8 @@ var PORT = process.env.PORT || 3000;
 var JWT_SECRET = process.env.JWT_SECRET || 'jtr_review_secret_2026';
 
 // ===== Database Setup =====
-var DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
-var UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(__dirname, 'uploads');
+var DATA_DIR = process.env.DATA_DIR || (fs.existsSync('/data') ? '/data' : path.join(__dirname, 'data'));
+var UPLOAD_DIR = process.env.UPLOAD_DIR || (fs.existsSync('/data/uploads') ? '/data/uploads' : path.join(__dirname, 'uploads'));
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
