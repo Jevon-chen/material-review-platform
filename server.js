@@ -915,6 +915,42 @@ app.post('/api/monthly-clear', authMiddleware, function (req, res) {
   res.json({ cleared: cleared });
 });
 
+// ===== Clear All Materials (Admin) =====
+app.post('/api/materials/clear-all', authMiddleware, function (req, res) {
+  if (!req.user.can_view_all) return res.status(403).json({ error: '无权限' });
+  var before = db.prepare('SELECT COUNT(*) as c FROM materials').get().c;
+  // Delete uploaded files
+  var materials = db.prepare('SELECT file_path FROM materials WHERE file_path IS NOT NULL').all();
+  materials.forEach(function (m) {
+    try {
+      var fp = path.join(UPLOAD_DIR, m.file_path);
+      if (fs.existsSync(fp)) fs.unlinkSync(fp);
+    } catch (e) { /* ignore */ }
+  });
+  db.prepare('DELETE FROM materials').run();
+  addAuditLog(req.user.name, 'clear', '清空所有素材', '清除 ' + before + ' 条素材及文件');
+  broadcastWS('monthly_cleared', { cleared: before });
+  res.json({ cleared: before });
+});
+
+// ===== Delete Single Material =====
+app.delete('/api/materials/:id', authMiddleware, function (req, res) {
+  var m = db.prepare('SELECT * FROM materials WHERE id = ?').get(req.params.id);
+  if (!m) return res.status(404).json({ error: '素材不存在' });
+  if (!req.user.can_view_all && m.agent !== req.user.name) return res.status(403).json({ error: '无权限' });
+  // Delete uploaded file
+  if (m.file_path) {
+    try {
+      var fp = path.join(UPLOAD_DIR, m.file_path);
+      if (fs.existsSync(fp)) fs.unlinkSync(fp);
+    } catch (e) { /* ignore */ }
+  }
+  db.prepare('DELETE FROM materials WHERE id = ?').run(req.params.id);
+  addAuditLog(req.user.name, 'delete', m.title, '删除素材');
+  broadcastWS('material_updated', { id: req.params.id, deleted: true });
+  res.json({ deleted: 1 });
+});
+
 // ===== Seed Data =====
 function seedData() {
   var brandCount = db.prepare('SELECT COUNT(*) as c FROM brands').get().c;
