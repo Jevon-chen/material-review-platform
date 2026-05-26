@@ -112,14 +112,9 @@ function init() {
     });
     
     if (dbContent && dbContent.length > 0) {
-      // Only overwrite if remote db exists and is valid
-      if (!fs.existsSync(DB_FILE) || fs.statSync(DB_FILE).size === 0) {
-        fs.writeFileSync(DB_FILE, dbContent);
-        console.log('[db-sync] restored database from GitHub (' + dbContent.length + ' bytes)');
-      } else {
-        // Local db exists, keep local (it has seed data)
-        console.log('[db-sync] local db exists, keeping local version');
-      }
+      // Always restore from GitHub - remote is the source of truth
+      fs.writeFileSync(DB_FILE, dbContent);
+      console.log('[db-sync] restored database from GitHub (' + dbContent.length + ' bytes)');
     }
   } else {
     console.log('[db-sync] no data branch yet, will create on first sync');

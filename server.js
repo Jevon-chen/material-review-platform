@@ -1061,33 +1061,8 @@ function seedData() {
     setConfigObj('agent_' + a.name, { brands: a.brands, contact: a.contact, phone: a.phone, monthTarget: a.monthTarget, deadline: a.deadline, rhythm: a.rhythm });
   });
 
-  // Sample Materials
-  var insertMat = db.prepare('INSERT INTO materials (id, title, brand, type, agent, month, status, score, ai_result, created_at, review_note, reject_reason, resubmit_count, duration, file_size, premium, model, platform, policy, version, file_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
-  var matData = [
-    ['M001', '捷途旅行者-沙漠穿越篇', '捷途', '短视频', '明锐互动', '2026-05', 'pending', null, null, '2026-05-20', '', '', 0, '1:32', '48MB', 0, '旅行者', '抖音', '至高3.3万优惠(含国补)', 1, null],
-    ['M002', '山海T2-露营生活Vlog', '山海', 'Vlog', '光合作用', '2026-05', 'pending', null, null, '2026-05-21', '', '', 0, '3:15', '128MB', 0, '山海T1', '抖音', '至高25000元综合优惠', 1, null],
-    ['M003', '纵横F-越野挑战赛', '纵横', '短视频', '新视野', '2026-05', 'pending', null, null, '2026-05-21', '', '', 0, '2:08', '76MB', 0, '纵横G700', '快手', '至高25000(厂补)+报废2万或置换1.5万(国补)', 1, null],
-    ['M004', '捷途大圣-城市通勤日常', '捷途', '短视频', '明锐互动', '2026-05', 'approved', 87, JSON.stringify({ brand: 90, quality: 88, compliance: 82, creativity: 86 }), '2026-05-18', '通过', '', 0, '1:15', '42MB', 1, '大圣', '抖音', '0首付', 1, null],
-    ['M005', '山海L9-家庭出行记', '山海', '长视频', '光合作用', '2026-05', 'approved', 92, JSON.stringify({ brand: 95, quality: 90, compliance: 94, creativity: 88 }), '2026-05-17', '优质素材', '', 0, '5:30', '220MB', 1, '山海L7', '视频号', '至高20000元综合优惠', 1, null],
-    ['M006', '纵横G600-硬核测评', '纵横', '测评', '新视野', '2026-04', 'rejected', 45, JSON.stringify({ brand: 50, quality: 40, compliance: 30, creativity: 55 }), '2026-04-28', '驳回', '品牌露出不合规，logo使用错误；广告法违规：出现"最强越野"极限词；竞品车型画面未做模糊处理', 1, '4:12', '156MB', 0, '纵横G700', '抖音', '至高25000(厂补)+报废2万或置换1.5万(国补)', 2, null],
-    ['M007', '捷途X70-五一自驾攻略', '捷途', '攻略', '明锐互动', '2026-05', 'ai_reviewed', 78, JSON.stringify({ brand: 82, quality: 76, compliance: 70, creativity: 80 }), '2026-05-22', '', '', 0, '2:45', '98MB', 0, 'X70PLUS', '抖音', '43000元优惠', 1, null],
-    ['M008', '山海V1-潮玩改装', '山海', '短视频', '光合作用', '2026-05', 'ai_reviewed', 83, JSON.stringify({ brand: 85, quality: 80, compliance: 88, creativity: 78 }), '2026-05-22', '', '', 0, '1:58', '65MB', 0, '山海L7PLUS', '全平台', '至高25000元综合优惠', 1, null]
-  ];
-  var insertMatMany = db.transaction(function () { matData.forEach(function (d) { insertMat.run(d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7], d[8], d[9], d[10], d[11], d[12], d[13], d[14], d[15], d[16], d[17], d[18], d[19], d[20]); }); });
-  insertMatMany();
-
-  // Targets
-  var insertTarget = db.prepare('INSERT INTO targets (id, agent, brand, month, video_count, submitted, approved, rejected) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
-  var targetData = [
-    ['T001', '明锐互动', '捷途', '2026-05', 15, 8, 5, 1],
-    ['T002', '明锐互动', '捷途', '2026-04', 12, 12, 10, 2],
-    ['T003', '光合作用', '山海', '2026-05', 10, 6, 4, 1],
-    ['T004', '光合作用', '山海', '2026-04', 10, 10, 8, 2],
-    ['T005', '新视野', '纵横', '2026-05', 8, 5, 3, 1],
-    ['T006', '新视野', '纵横', '2026-04', 8, 8, 6, 2]
-  ];
-  var insertTargetMany = db.transaction(function () { targetData.forEach(function (d) { insertTarget.run(d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]); }); });
-  insertTargetMany();
+  // Sample Materials - REMOVED (no demo data, start clean)
+  // Targets - REMOVED (created dynamically when agents are added)
 
   // Config
   setConfigObj('nextMaterialId', '9');
