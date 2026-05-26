@@ -960,7 +960,7 @@ function seedData() {
 
   // Brand account
   var brandHash = bcrypt.hashSync('123456', 10);
-  db.prepare('INSERT INTO users (username, password_hash, name, role, agent_name, can_review, can_view_all, can_settings) VALUES (?, ?, ?, ?, ?, 1, 1, 1)').run('brand', brandHash, '品牌方', 'brand', null);
+  db.prepare('INSERT INTO users (username, password_hash, name, role, agent_name, can_review, can_view_all, can_settings) VALUES (?, ?, ?, ?, ?, 1, 1, 1)').run('捷途', brandHash, '品牌方', 'brand', null);
 
   // Brands
   var insertBrand = db.prepare('INSERT INTO brands (id, name, color, keywords, desc) VALUES (?, ?, ?, ?, ?)');
