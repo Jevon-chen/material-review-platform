@@ -1095,14 +1095,43 @@ dbSync.init();
 
 seedData();
 
-// Migration: rename brand login from 'brand' to '捷途'
-(function migrateBrandUsername() {
+// Migration: rename brand login from 'brand' to '捷途' + replace old agents
+(function migrateData() {
+  // 1. Rename brand user
   var oldUser = db.prepare('SELECT * FROM users WHERE username = ?').get('brand');
   if (oldUser) {
     db.prepare('UPDATE users SET username = ? WHERE username = ?').run('捷途', 'brand');
-    // Also update any audit logs referencing the old username
     db.prepare('UPDATE audit_log SET user = ? WHERE user = ?').run('捷途', 'brand');
     console.log('[migration] brand username renamed to 捷途');
+  }
+
+  // 2. Replace old agents with new ones
+  var newAgents = [
+    { name: '北岸传奇', brands: ['山海', '捷途', '纵横'], username: '北岸传奇', password: '123456' },
+    { name: '北京智阅', brands: ['捷途', '山海', '纵横'], username: '北京智阅', password: '123456' },
+    { name: '桃羽文化', brands: ['捷途', '山海', '纵横'], username: '桃羽文化', password: '123456' }
+  ];
+  var currentAgents = db.prepare("SELECT name FROM users WHERE role = 'agent'").all().map(function(r) { return r.name; });
+  var needsMigration = currentAgents.length === 0 || (currentAgents.indexOf('明锐互动') >= 0 && currentAgents.indexOf('北岸传奇') < 0);
+
+  if (needsMigration) {
+    // Delete old agents and their data
+    var oldAgentUsers = db.prepare("SELECT * FROM users WHERE role = 'agent'").all();
+    oldAgentUsers.forEach(function(a) {
+      db.prepare('DELETE FROM materials WHERE agent = ?').run(a.agent_name);
+      db.prepare('DELETE FROM targets WHERE agent = ?').run(a.agent_name);
+      db.prepare('DELETE FROM config WHERE key = ?').run('agent_' + a.agent_name);
+      db.prepare('DELETE FROM users WHERE id = ?').run(a.id);
+    });
+    // Insert new agents
+    var insertUser = db.prepare('INSERT INTO users (username, password_hash, name, role, agent_name, can_review, can_view_all, can_settings) VALUES (?, ?, ?, ?, ?, 0, 0, 0)');
+    newAgents.forEach(function(a) {
+      var hash = bcrypt.hashSync(a.password, 10);
+      insertUser.run(a.username, hash, a.name, 'agent', a.name);
+      setConfigObj('agent_' + a.name, { brands: a.brands, contact: '', phone: '', monthTarget: 0, deadline: '', rhythm: '' });
+    });
+    db.prepare('INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)').run('nextMaterialId', '1');
+    console.log('[migration] agents replaced with: ' + newAgents.map(function(a) { return a.name; }).join(', '));
   }
 })();
 
