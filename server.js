@@ -498,6 +498,24 @@ app.get('/api/materials/:id/file', authMiddleware, function (req, res) {
   if (!m.file_path) return res.status(404).json({ error: '无文件' });
   var filePath = path.join(UPLOAD_DIR, m.file_path);
   if (!fs.existsSync(filePath)) return res.status(404).json({ error: '文件不存在' });
+  var stat = fs.statSync(filePath);
+  var ext = path.extname(filePath).toLowerCase();
+  var mimeMap = {'.mp4':'video/mp4','.mov':'video/quicktime','.avi':'video/x-msvideo','.webm':'video/webm','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.gif':'image/gif'};
+  var mimeType = mimeMap[ext] || 'application/octet-stream';
+  // Support range requests for video streaming
+  var range = req.headers.range;
+  if (range) {
+    var parts = range.replace(/bytes=/, '').split('-');
+    var start = parseInt(parts[0], 10);
+    var end = parts[1] ? parseInt(parts[1], 10) : stat.size - 1;
+    var chunkSize = end - start + 1;
+    res.writeHead(206, {'Content-Range':'bytes '+start+'-'+end+'/'+stat.size,'Accept-Ranges':'bytes','Content-Length':chunkSize,'Content-Type':mimeType});
+    fs.createReadStream(filePath, {start:start,end:end}).pipe(res);
+  } else {
+    res.writeHead(200, {'Content-Length':stat.size,'Content-Type':mimeType,'Accept-Ranges':'bytes'});
+    fs.createReadStream(filePath).pipe(res);
+  }
+  return;
   res.sendFile(filePath);
 });
 
@@ -1144,6 +1162,8 @@ if (process.argv.indexOf('--init-only') >= 0) {
 
 server.listen(PORT, function () {
   console.log('捷途素材预审台 server running on port ' + PORT);
+  server.timeout = 300000; // 5min timeout for large uploads
+  server.keepAliveTimeout = 65000;
   // Start auto-sync after server is up
   dbSync.startAutoSync();
 });
