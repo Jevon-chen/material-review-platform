@@ -1094,6 +1094,18 @@ function checkMonthlyClear() {
 dbSync.init();
 
 seedData();
+
+// Migration: rename brand login from 'brand' to '捷途'
+(function migrateBrandUsername() {
+  var oldUser = db.prepare('SELECT * FROM users WHERE username = ?').get('brand');
+  if (oldUser) {
+    db.prepare('UPDATE users SET username = ? WHERE username = ?').run('捷途', 'brand');
+    // Also update any audit logs referencing the old username
+    db.prepare('UPDATE audit_log SET user = ? WHERE user = ?').run('捷途', 'brand');
+    console.log('[migration] brand username renamed to 捷途');
+  }
+})();
+
 checkMonthlyClear();
 
 if (process.argv.indexOf('--init-only') >= 0) {
