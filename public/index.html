@@ -252,6 +252,60 @@ tbody tr:last-child td{border-bottom:none;}
     <div class="form-group"><label>用户名</label><input type="text" id="loginUsername" placeholder="输入登录名"></div>
     <div class="form-group"><label>密码</label><input type="password" id="loginPassword" placeholder="请输入密码"></div>
     <button class="btn btn-primary" id="loginBtn">登 录</button>
+    <script>
+    /* Standalone login script - works independently of main app script */
+    (function(){
+      var API_BASE=window.location.origin+'/api';
+      var WS_URL=(window.location.protocol==='https:'?'wss:':'ws:')+'//'+window.location.host+'/ws';
+      
+      function apiLogin(method,path,body){
+        var opts={method:method,headers:{'Content-Type':'application/json'}};
+        if(body)opts.body=JSON.stringify(body);
+        return fetch(API_BASE+path,opts).then(function(r){return r.json();});
+      }
+
+      function doLoginSuccess(token,user){
+        localStorage.setItem('jtr_token',token);
+        /* Store user for main script to pick up */
+        window.__loginData={token:token,user:user};
+        /* Reload to let main script initialize with valid token */
+        window.location.reload();
+      }
+
+      var loginBtn=document.getElementById('loginBtn');
+      if(loginBtn){
+        window.__loginHandled=true;loginBtn.addEventListener('click',function(){
+          var username=document.getElementById('loginUsername').value.trim();
+          var password=document.getElementById('loginPassword').value;
+          var errEl=document.getElementById('loginError');
+          if(!username){errEl.textContent='请输入用户名';errEl.classList.add('show');return;}
+          if(!password){errEl.textContent='请输入密码';errEl.classList.add('show');return;}
+          errEl.classList.remove('show');
+          loginBtn.disabled=true;
+          loginBtn.textContent='登录中...';
+          apiLogin('POST','/auth/login',{username:username,password:password}).then(function(res){
+            loginBtn.disabled=false;
+            loginBtn.textContent='登 录';
+            if(res.error){errEl.textContent=res.error;errEl.classList.add('show');return;}
+            doLoginSuccess(res.token,res.user);
+          }).catch(function(err){
+            loginBtn.disabled=false;
+            loginBtn.textContent='登 录';
+            errEl.textContent='登录失败，请重试';
+            errEl.classList.add('show');
+          });
+        });
+        /* Enter key support */
+        document.getElementById('loginPassword').addEventListener('keydown',function(e){
+          if(e.key==='Enter')loginBtn.click();
+        });
+        document.getElementById('loginUsername').addEventListener('keydown',function(e){
+          if(e.key==='Enter')document.getElementById('loginPassword').focus();
+        });
+      }
+    })();
+    </script>
+
     
   </div>
 </div>
@@ -303,7 +357,8 @@ var currentPage='dashboard';
 function navigateTo(page){currentPage=page;document.querySelectorAll('.nav-item').forEach(function(item){item.classList.toggle('active',item.dataset.page===page);});renderPage();}
 function showLogin(){document.getElementById('appLayout').style.display='none';document.getElementById('loginPage').style.display='flex';}
 function doLogin(){document.getElementById('loginPage').style.display='none';document.getElementById('appLayout').style.display='flex';document.getElementById('loginError').classList.remove('show');document.getElementById('userAvatar').textContent=currentUser.name.charAt(0);document.getElementById('userName').textContent=currentUser.name;document.getElementById('userRole').textContent=currentUser.role==='brand'?'品牌方':currentUser.name;currentPage='dashboard';document.querySelectorAll('.nav-item').forEach(function(item){item.classList.toggle('active',item.dataset.page==='dashboard');});connectWS();renderPage();showToast('欢迎回来，'+currentUser.name,'success');}
-document.getElementById('loginBtn').addEventListener('click',function(){try{var username=document.getElementById('loginUsername').value.trim();var password=document.getElementById('loginPassword').value;var errEl=document.getElementById('loginError');if(!username){errEl.textContent='请输入用户名';errEl.classList.add('show');return;}if(!password){errEl.textContent='请输入密码';errEl.classList.add('show');return;}console.log('Login attempt:',username);api('POST','/auth/login',{username:username,password:password}).then(function(res){console.log('Login response:',JSON.stringify(res));if(res.error){errEl.textContent=res.error;errEl.classList.add('show');return;}authToken=res.token;localStorage.setItem('jtr_token',authToken);currentUser=res.user;doLogin();}).catch(function(err){console.error('Login error:',err);errEl.textContent='登录失败，请重试';errEl.classList.add('show');});}catch(e){console.error('Login exception:',e);alert('登录异常:'+e.message);}});
+/* Login binding handled by standalone script above; this is fallback if standalone didn't load */
+if(!window.__loginHandled){document.getElementById('loginBtn').addEventListener('click',function(){try{var username=document.getElementById('loginUsername').value.trim();var password=document.getElementById('loginPassword').value;var errEl=document.getElementById('loginError');if(!username){errEl.textContent='请输入用户名';errEl.classList.add('show');return;}if(!password){errEl.textContent='请输入密码';errEl.classList.add('show');return;}console.log('Login attempt:',username);api('POST','/auth/login',{username:username,password:password}).then(function(res){console.log('Login response:',JSON.stringify(res));if(res.error){errEl.textContent=res.error;errEl.classList.add('show');return;}authToken=res.token;localStorage.setItem('jtr_token',authToken);currentUser=res.user;doLogin();}).catch(function(err){console.error('Login error:',err);errEl.textContent='登录失败，请重试';errEl.classList.add('show');});}catch(e){console.error('Login exception:',e);alert('登录异常:'+e.message);}});}
 document.getElementById('logoutBtn').addEventListener('click',function(){authToken='';localStorage.removeItem('jtr_token');currentUser=null;if(wsConn){wsConn.close();wsConn=null;}document.getElementById('appLayout').style.display='none';document.getElementById('loginPage').style.display='flex';document.getElementById('loginUsername').value='';document.getElementById('loginPassword').value='';});
 document.querySelectorAll('.nav-item').forEach(function(item){item.addEventListener('click',function(){navigateTo(this.dataset.page);});});
 document.getElementById('loginPassword').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('loginBtn').click();});
